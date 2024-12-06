@@ -1,121 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>License Plate Recognition</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-    canvas {
-      display: block;
-      margin: 20px auto;
-      max-width: 100%;
-      border: 1px solid #ccc;
-    }
-    #log {
-      margin: 20px auto;
-      max-width: 600px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 200px;
-      overflow-y: auto;
-      background: #f9f9f9;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-    #status {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>License Plate Recognition</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      max-width: 100%;
+      border: 1px solid #ccc;
+    }
+    #log {
+      margin: 20px auto;
+      max-width: 600px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-  <h1>License Plate Recognition</h1>
-  <p id="status">Initializing camera...</p>
-  <button id="capture-btn">Take Picture</button>
-  <div id="log">
-    <h3>Recognized Plates:</h3>
-    <ul id="plates"></ul>
-  </div>
+  <h1>License Plate Recognition</h1>
+  <p id="status">Initializing camera...</p>
+  <button id="capture-btn">Take Picture</button>
+  <div id="log">
+    <h3>Recognized Plates:</h3>
+    <ul id="plates"></ul>
+  </div>
 
-  <script>
-    let video;
-    let canvas;
-    let captureButton;
+  <script>
+    let video;
+    let canvas;
+    let captureButton;
 
-    function setup() {
-      // Create a responsive canvas
-      const canvasWidth = windowWidth < 640 ? windowWidth : 640;
-      const canvasHeight = canvasWidth * 0.75; // Maintain 4:3 aspect ratio
-      canvas = createCanvas(canvasWidth, canvasHeight);
-      canvas.hide(); // Hide canvas as we're using it off-screen
+    function setup() {
+      // Create a responsive canvas
+      const canvasWidth = windowWidth < 640 ? windowWidth : 640;
+      const canvasHeight = canvasWidth * 0.75; // Maintain 4:3 aspect ratio
+      canvas = createCanvas(canvasWidth, canvasHeight);
 
-      // Start the video capture using the rear camera
-      video = createCapture({
-        video: {
-          facingMode: { exact: "environment" } // Use the rear camera
-        }
-      });
-      video.size(canvasWidth, canvasHeight);
-      video.hide();
+      // Start the video capture using the rear camera
+      video = createCapture({
+        video: {
+          facingMode: { exact: "environment" } // Use the rear camera
+        }
+      });
+      video.size(canvasWidth, canvasHeight);
+      video.hide(); // Hide default video element; we'll draw it on the canvas instead
 
-      select("#status").html("Camera ready. Press the button to take a picture.");
+      select("#status").html("Camera ready. Press the button to take a picture.");
 
-      // Get the capture button
-      captureButton = select("#capture-btn");
-      captureButton.mousePressed(processFrame);
-    }
+      // Get the capture button
+      captureButton = select("#capture-btn");
+      captureButton.mousePressed(processFrame);
+    }
 
-    async function processFrame() {
-      // Draw the current video frame to the canvas
-      image(video, 0, 0, width, height);
-      canvas.show(); // Temporarily show the canvas for debugging if needed
+    function draw() {
+      // Continuously draw the video feed on the canvas
+      if (video) {
+        image(video, 0, 0, width, height);
+      }
+    }
 
-      // Get the canvas as an image
-      const dataURL = canvas.elt.toDataURL("image/png");
+    async function processFrame() {
+      // Get the canvas as an image
+      const dataURL = canvas.elt.toDataURL("image/png");
 
-      select("#status").html("Processing image...");
+      select("#status").html("Processing image...");
 
-      try {
-        // Use Tesseract.js to recognize text (number plates) in the captured image
-        const result = await Tesseract.recognize(dataURL, "eng", {
-          logger: (info) => console.log(info), // Debug: Log progress
-        });
+      try {
+        // Use Tesseract.js to recognize text (number plates) in the captured image
+        const result = await Tesseract.recognize(dataURL, "eng", {
+          logger: (info) => console.log(info), // Debug: Log progress
+        });
 
-        const plates = result.data.text.trim();
-        if (plates) {
-          logPlate(plates);
-        } else {
-          select("#status").html("No text found. Try again.");
-        }
-      } catch (error) {
-        console.error("Error recognizing text:", error);
-        select("#status").html("Error processing image.");
-      }
-    }
+        const plates = result.data.text.trim();
+        if (plates) {
+          logPlate(plates);
+        } else {
+          select("#status").html("No text found. Try again.");
+        }
+      } catch (error) {
+        console.error("Error recognizing text:", error);
+        select("#status").html("Error processing image.");
+      }
+    }
 
-    function logPlate(plate) {
-      // Display the recognized plate
-      const platesList = select("#plates");
-      const plateElement = createElement("li", plate);
-      platesList.child(plateElement);
+    function logPlate(plate) {
+      // Display the recognized plate
+      const platesList = select("#plates");
+      const plateElement = createElement("li", plate);
+      platesList.child(plateElement);
 
-      // Update the status
-      select("#status").html("Plate recognized: " + plate);
+      // Update the status
+      select("#status").html("Plate recognized: " + plate);
 
-      // Optionally save to local storage or database
-      console.log("Recognized Plate:", plate);
-    }
-  </script>
+      // Optionally save to local storage or database
+      console.log("Recognized Plate:", plate);
+    }
+  </script>
 </body>
 </html>
