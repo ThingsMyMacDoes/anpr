@@ -44,7 +44,6 @@
   <script>
     let video;
     let canvas;
-    let context;
 
     function setup() {
       // Create a responsive canvas
@@ -53,8 +52,12 @@
       canvas = createCanvas(canvasWidth, canvasHeight);
       canvas.hide(); // Hide canvas as we're using it off-screen
 
-      // Start the video capture
-      video = createCapture(VIDEO);
+      // Start the video capture using the rear camera
+      video = createCapture({
+        video: {
+          facingMode: { exact: "environment" } // Use the rear camera
+        }
+      });
       video.size(canvasWidth, canvasHeight);
       video.hide();
 
