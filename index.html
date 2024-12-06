@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Plate Recognition</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      max-width: 100%;
+    }
+    #log {
+      margin: 20px auto;
+      max-width: 600px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Number Plate Recognition</h1>
+  <p id="status">Initializing camera...</p>
+  <div id="log">
+    <h3>Recognized Plates:</h3>
+    <ul id="plates"></ul>
+  </div>
+
+  <script>
+    let video;
+    let canvas;
+    let context;
+
+    function setup() {
+      // Create a responsive canvas
+      const canvasWidth = windowWidth < 640 ? windowWidth : 640;
+      const canvasHeight = canvasWidth * 0.75; // Maintain 4:3 aspect ratio
+      canvas = createCanvas(canvasWidth, canvasHeight);
+      canvas.hide(); // Hide canvas as we're using it off-screen
+
+      // Start the video capture
+      video = createCapture(VIDEO);
+      video.size(canvasWidth, canvasHeight);
+      video.hide();
+
+      select("#status").html("Camera ready. Scanning plates...");
+      setInterval(processFrame, 3000); // Analyze a frame every 3 seconds
+    }
+
+    async function processFrame() {
+      // Draw the video frame to the canvas
+      image(video, 0, 0, width, height);
+      canvas.show(); // Temporarily show the canvas for debugging if needed
+
+      // Get the canvas as an image
+      const dataURL = canvas.elt.toDataURL("image/png");
+
+      try {
+        // Use Tesseract.js to recognize text (number plates) in the frame
+        const result = await Tesseract.recognize(dataURL, "eng", {
+          logger: (info) => console.log(info), // Debug: Log progress
+        });
+
+        const plates = result.data.text.trim();
+        if (plates) {
+          logPlate(plates);
+        }
+      } catch (error) {
+        console.error("Error recognizing text:", error);
+      }
+    }
+
+    function logPlate(plate) {
+      // Display the recognized plate
+      const platesList = select("#plates");
+      const plateElement = createElement("li", plate);
+      platesList.child(plateElement);
+
+      // Optionally save to local storage or database
+      console.log("Recognized Plate:", plate);
+    }
+
+    function draw() {
+      image(video, 0, 0, width, height); // Draw the live video feed
+    }
+  </script>
+</body>
+</html>
